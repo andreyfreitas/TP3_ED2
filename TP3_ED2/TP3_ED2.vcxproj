@@ -110,20 +110,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Functions.h" />
-    <ClInclude Include="Variables.h" />
-    <ClInclude Include="Variaveis.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Functions.cpp" />
-    <ClCompile Include="Main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="Texto.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="teste1.huf" />
     <None Include="Texto.huf" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Huffman.cpp" />
+    <ClCompile Include="Principal.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Huffman.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
