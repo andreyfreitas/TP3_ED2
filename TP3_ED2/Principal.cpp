@@ -1,5 +1,11 @@
+/*******************************************************************************/
+//						Andrey Alves de Freitas									/
+//						Marcio Bruno Ferreira de Sá								/
+//									TP3											/
+/*******************************************************************************/
 #include "Huffman.h"
 
+void loading();
 int main()
 {
 	char x; //Variavel de opção
@@ -39,10 +45,34 @@ int main()
 			cout << "Por favor digite um valor da lista abaixo. " << endl;
 		}
 		
-
+		
 	} while (x != '3');
-	
-	system("pause");
+	cout << endl;
+	loading();
 	return 0;
 }
 
+//www.vivaolinux.com.br/script/Barra-de-Loading-no-console
+void loading() {
+	for (int i = 0; i <= 70; i++)
+	{
+		printf("  %d%%\r", i + 30);
+		fflush(stdout);
+
+		for (int j = 0; j < i; j++)
+		{
+			if (!j) 
+				printf(" ");
+
+			printf("%c", 219);
+			Sleep(1);
+		}
+	}
+
+	printf("\n\nFinalizando...");
+	Sleep(1000);
+	printf("\r \t\t\t\t  FINALIZADO\n\n\n");
+	printf("\t\t  Autores: Andrey Freitas & Marcio Bruno \n\n\n\n");
+	Sleep(2500);
+	system(" ");
+}

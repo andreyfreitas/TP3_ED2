@@ -1,9 +1,15 @@
+/*******************************************************************************/
+//						Andrey Alves de Freitas									/
+//						Marcio Bruno Ferreira de Sá								/
+//									TP3											/
+/*******************************************************************************/
 #include <iostream>
 #include <cstring>
 #include <queue>
 #include <functional>
 #include <list>
 #include <fstream>
+#include<Windows.h>
 using namespace std;
 
 struct No
@@ -64,8 +70,8 @@ public:
 	~Huffman();
 	void Codificador();
 	void Decodificador();
-	void Wait(int waitTime);
-	void wait();
+	
+	
 	
 private:
 
@@ -88,7 +94,7 @@ private:
 	string ConversorBinario(unsigned char entrada);
 	NoRaiz * CriaArvore();
 	void DeleteArvore(NoRaiz * pt);
-	
+	void wait();
 	
 };
 

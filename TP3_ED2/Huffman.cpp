@@ -1,3 +1,8 @@
+/*******************************************************************************/
+//						Andrey Alves de Freitas									/
+//						Marcio Bruno Ferreira de Sá								/
+//									TP3											/
+/*******************************************************************************/
 #include "Huffman.h"
 
 Huffman::Huffman()
@@ -70,12 +75,12 @@ void Huffman::Codificador()
 	{
 		no[i] = *it;
 		it++;
-		NoRaiz * no = new NoRaiz();
-		no->a.simbolo = no[i].a.simbolo;
-		no->a.freq = no[i].a.freq;
-		no->dir = nullptr;
-		no->esq = nullptr;
-		fp.put(no, no[i].a.freq);
+		NoRaiz * node = new NoRaiz();
+		node->a.simbolo = no[i].simbolo;
+		node->a.freq = no[i].freq;
+		node->dir = nullptr;
+		node->esq = nullptr;
+		fp.put(node, no[i].freq);
 	}
 
 	// Cria arvore 
@@ -171,41 +176,32 @@ void Huffman::Decodificador()
 	nomeArquivo[strlen(nomeArquivo) - 2] = 'x';
 	nomeArquivo[strlen(nomeArquivo) - 1] = 't';
 
-	// O número de símbolos diferentes que aparecem no texto
+	
 	alphabetSize = 0;
 	fin.read((char*)&alphabetSize, sizeof(unsigned short));
-
-	// Aloca espaço para a informação do cabeçalho
 	no = new No[alphabetSize];
 	fin.read((char*)no, sizeof(No)* alphabetSize);
-
-	// Lê o número de bits armazenados no arquivo e calcula tamanho do vetor
 	nbits = 0;
 	fin.read((char*)&nbits, sizeof(unsigned short));
 	int vetsize = ((nbits % 8) == 0) ? (nbits / 8) : ((nbits / 8) + 1);
-
-	// Aloca espaço para os dados
 	char * data = new char[vetsize];
 	fin.read((char*)data, sizeof(char)* vetsize);
 	fin.close();
 
-	// Copia a informação dos headers comuns em headers compativeis com a criação da arvore
 	for (int i = 0; i < alphabetSize; i++)
 	{
-		NoRaiz * hNo = new NoRaiz;
-		hNo->esq = nullptr;
-		hNo->dir = nullptr;
-		hNo->a.simbolo = no[i].simbolo;
-		hNo->a.freq = no[i].freq;
-
-		// Adiciona header à fila de prioridade.
-		fp.put(hNo, no[i].freq);
+		NoRaiz * node = new NoRaiz;
+		node->esq = nullptr;
+		node->dir = nullptr;
+		node->a.simbolo = no[i].simbolo;
+		node->a.freq = no[i].freq;
+		fp.put(node, no[i].freq);
 	}
 	wait();
-	cout << "\n\nArquivo decodificado: \n\n";
+	cout << "\n\nTexto contido no arquivo: \n\n";
 	char result;
 	ofstream fout;
-	fout.open(nomeArquivo);//Caso o arquivo txt exista essa abertura o sobreescreve com o texto decodificado
+	fout.open(nomeArquivo);
 	NoRaiz * raiz = CriaArvore();
 
 	for (int i = 0; i < alphabetSize; i++)
@@ -282,7 +278,7 @@ void Huffman::Decodificador()
 
 		}
 	}
-	cout << "\n\nArquivo decodificado em " << nomeArquivo << " !\n";
+	cout << "\n\nNovo arquivo decodificado: " << nomeArquivo << " !\n";
 	fout.close();
 	delete[] no;
 	delete[] data;
@@ -295,7 +291,8 @@ void Huffman::Decodificador()
 	system("cls");
 }
 
-string Huffman::ConversorBinario(unsigned char input) // Converte caractere em binario.
+// Converte caractere em binario.
+string Huffman::ConversorBinario(unsigned char input) 
 {
 	unsigned temp = (unsigned)input;
 	string tmp = "", tm = "";
@@ -316,7 +313,7 @@ string Huffman::ConversorBinario(unsigned char input) // Converte caractere em b
 	return tmp;
 }
 
-// Retorna a informação binaria correspondente do caractere c
+
 string Huffman::GetPrefixo(char c)
 {
 	for (auto it = Dicionario.begin(); it != Dicionario.end(); it++)
@@ -327,18 +324,15 @@ string Huffman::GetPrefixo(char c)
 	return "";
 }
 
-// Retorna simbolo correspondente à informação binaria
-char Huffman::GetSimbolo(NoRaiz * pt, list<char> * path)
+char Huffman::GetSimbolo(NoRaiz * pt, list<char> * caminho)
 {
-	// Assegura que a leitura das informações binarias não ultrapasse para o lixo do ultimo caractere.
 	if (TamArquivoDecodificado == 0)
 	{
-		path->clear();
+		caminho->clear();
 		return -1;
 	}
 
-	// A informação binaria gravada no path não foi suficiente para determinar o caractere correspondente.
-	if (path->empty() && pt->a.simbolo == '\0')
+	if (caminho->empty() && pt->a.simbolo == '\0')
 	{
 		tempRaiz = pt;
 		return -1;
@@ -346,57 +340,50 @@ char Huffman::GetSimbolo(NoRaiz * pt, list<char> * path)
 
 	char c = pt->a.simbolo;
 
-	// Caractere correspondente encontrado.
 	if (c != '\0')
 	{
-		TamArquivoDecodificado--; // Um caracter foi lido.
+		TamArquivoDecodificado--; 
 		return c;
 	}
 
-	// Se houver informação binaria a ser lida, leia.
-	// 0 para esquerda e 1 para direita
-	if (!path->empty() && path->front() == '0')
+	if (!caminho->empty() && caminho->front() == '0')
 	{
-		path->pop_front();
-		c = GetSimbolo(pt->esq, path);
+		caminho->pop_front();
+		c = GetSimbolo(pt->esq, caminho);
 	}
 
-	// Uma verificação extra (c == '\0') para caso um caractere tenha sido encontrado na chamada da esquerda.
-	// Necessaria para o retorno das chamadas recursivas.
-	if (!path->empty() && path->front() == '1' && c == '\0')
+	if (!caminho->empty() && caminho->front() == '1' && c == '\0')
 	{
-		path->pop_front();
-		c = GetSimbolo(pt->dir, path);
+		caminho->pop_front();
+		c = GetSimbolo(pt->dir, caminho);
 	}
 
-	// Retorna caractere encontrado. Esse retorno é utilizado durante as chamadas recursivas.
 	return c;
 }
 
-// Gera dicionario para a codificação.
-// Utilizado navegação pos-ordem.
-void Huffman::CriaDicionario(NoRaiz * pt, string path)
+
+void Huffman::CriaDicionario(NoRaiz * pt, string caminho)
 {
 	if (pt->esq != nullptr)
 	{
-		path.operator+=('0');
-		CriaDicionario(pt->esq, path);
-		path.pop_back();
+		caminho.operator+=('0');
+		CriaDicionario(pt->esq, caminho);
+		caminho.pop_back();
 	}
 
 	if (pt->dir != nullptr)
 	{
-		path.operator+=('1');
-		CriaDicionario(pt->dir, path);
-		path.pop_back();
+		caminho.operator+=('1');
+		CriaDicionario(pt->dir, caminho);
+		caminho.pop_back();
 	}
 
 	if (pt->a.simbolo != '\0')
 	{
-		Chave * def = new Chave; // Cria definição do dicionario
-		def->simbolo = pt->a.simbolo;
-		def->codigo = path;
-		Dicionario.push_back(def); // Grava informação no dicionario.
+		Chave * definicao = new Chave;
+		definicao->simbolo = pt->a.simbolo;
+		definicao->codigo = caminho;
+		Dicionario.push_back(definicao);
 	}
 }
 
@@ -455,7 +442,6 @@ int Huffman::Alfabeto(char simbolo)
 		}
 	}
 
-	// Adiciona caractere c como novo simbolo.
 	totalDeNos[alphabetSize] = new No();
 	totalDeNos[alphabetSize]->simbolo = simbolo;
 	totalDeNos[alphabetSize]->freq++;
@@ -463,19 +449,12 @@ int Huffman::Alfabeto(char simbolo)
 	return 0;
 }
 
-void Huffman::Wait(int waitTime)
-{
-	for (int i = 0; i < waitTime; i++)
-	{
-		continue;
-	}
-}
 
 void Huffman::wait() {
 	cout << "Convertendo";
 	for (size_t i = 0; i < 10; i++)
 	{
-		Wait(100000000);
+		Sleep(100);
 		cout << ".";
 	}
 	cout << endl;
