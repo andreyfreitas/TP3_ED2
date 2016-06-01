@@ -2,10 +2,10 @@
 
 Huffman::Huffman()
 {
-	decodedFileLenght = 0;
+	TamArquivoDecodificado = 0;
 	alphabetSize = 0;
 	nbits = 0;
-	text = "";
+	texto = "";
 }
 
 Huffman::~Huffman()
@@ -13,24 +13,26 @@ Huffman::~Huffman()
 	
 }
 
-void Huffman::EncodeFile()
+void Huffman::Codificador()
 {
 	cout << "Lista de arquivos a serem Codificados\n";
-	system("dir /b *.txt"); //Lista os arquivos a serem codificados
+	//Lista os arquivos a serem codificados
+	system("dir /b *.txt"); 
 	cout << "\n";
-
-	char nomeArquivo[60] = { '\0' }; // Nome do arquivo limitado a 60 caracteres no máximo.
+	// Nome do arquivo limitado a 60 caracteres
+	char nomeArquivo[60] = { '\0' }; 
 	cout << "Nome do arquivo que deseja codificar: ";
 	cin >> nomeArquivo;
 
 	ifstream fin;
-	text.clear();
+	texto.clear();
 	char b;
+	
+	// Abre arquivo a ser compactado.
+	fin.open(nomeArquivo); 
 
-	fin.open(nomeArquivo); // Abre arquivo a ser compactado.
-
-	nomeArquivo[strlen(nomeArquivo) - 3] = 'h';//apos abertura a variavel nomeArquivo passa representar
-	nomeArquivo[strlen(nomeArquivo) - 2] = 'u';//o nome do arquivo de saida
+	nomeArquivo[strlen(nomeArquivo) - 3] = 'h';
+	nomeArquivo[strlen(nomeArquivo) - 2] = 'u';
 	nomeArquivo[strlen(nomeArquivo) - 1] = 'f';
 
 	if (!fin.is_open())
@@ -39,32 +41,29 @@ void Huffman::EncodeFile()
 		system("pause");
 		exit(EXIT_FAILURE);
 	}
-
-	fin.get(b); // Lê primeiro caractere
-
-	while (!fin.eof()) // Enquanto o ifstream não estiver no final do arquivo
+	
+	fin.get(b); 
+	while (!fin.eof()) 
 	{
 		if (b > 0)
-			text.operator+=(b); // Lê próximo valor
-
+			texto.operator+=(b);
 		fin.get(b);
 	}
-
-
 	fin.close();
+	
+	// Determina frequencias de cada caractere do texto
+	for (int i = 0; i < texto.length(); i++)
+		Alfabeto(texto[i]); 
 
-	for (int i = 0; i < text.length(); i++)
-		CreateAlphabet(text[i]); // Determina frequencias de cada caractere do texto
-
-	header = new Header[alphabetSize];
+	no = new No[alphabetSize];
 
 	// Ordena headers de acordo com o simbolo
-	list<Header> lHeader;
+	list<No> lHeader;
 	for (int i = 0; i < alphabetSize; i++)
 	{
-		lHeader.push_back(*totalHeader[i]);
+		lHeader.push_back(*totalDeNos[i]);
 	}
-	lHeader.sort([](const Header& first, const Header& second) { return first.simbolo < second.simbolo; });
+	lHeader.sort([](const No& first, const No& second) { return first.simbolo < second.simbolo; });
 
 	// Primeiro header da lista ordenada
 	auto it = lHeader.begin();
@@ -73,28 +72,28 @@ void Huffman::EncodeFile()
 	for (int i = 0; i < alphabetSize; i++)
 	{
 		// Copia header da lista ordenada para vetor
-		header[i] = *it;
+		no[i] = *it;
 
 		// Iteração da lista ordenada de headers.
 		it++;
 
-		// Header compativel com criação da arvore.
-		HeaderNo * no = new HeaderNo();
-		no->a.simbolo = header[i].simbolo;
-		no->a.freq = header[i].freq;
+		// No compativel com criação da arvore.
+		NoRaiz * no = new NoRaiz();
+		no->a.simbolo = no[i].a.simbolo;
+		no->a.freq = no[i].a.freq;
 		no->dir = nullptr;
 		no->esq = nullptr;
 
-		// Adiciona HeaderNo à fila de prioridade.
-		simpleFrontier.put(no, header[i].freq);
+		// Adiciona No à fila de prioridade.
+		fp.put(no, no[i].a.freq);
 	}
 
 	// Gera arvore a partir da fila de prioridade.
-	HeaderNo * raiz = CreateTree();
+	NoRaiz * raiz = CriaArvore();
 
 	// Gera dicionario a partir da raiz da arvore.
-	Dictionary.clear();
-	GenerateDictionary(raiz, "");
+	Dicionario.clear();
+	CriaDicionario(raiz, "");
 
 	int contador = 0;
 	char binaryChar = 0;
@@ -106,10 +105,10 @@ void Huffman::EncodeFile()
 
 
 	// Leitura de todos os caracteres da string.
-	for (int i = 0; i < text.length(); i++)
+	for (int i = 0; i < texto.length(); i++)
 	{
 		// Pega o codigo correspondente da letra.
-		string code = GetCode(text[i]);
+		string code = GetPrefixo(texto[i]);
 
 		// Le todos os caracteres (numeros) do codigo da letra.
 		for (int j = 0; j < code.length(); j++)
@@ -149,27 +148,27 @@ void Huffman::EncodeFile()
 	int vetsize = ((nbits % 8) == 0) ? (nbits / 8) : ((nbits / 8) + 1);
 
 	fout.write((char*)&alphabetSize, sizeof(unsigned short));
-	fout.write((char*)header, sizeof(Header) * alphabetSize);
+	fout.write((char*)no, sizeof(No) * alphabetSize);
 	fout.write((char*)&nbits, sizeof(unsigned short));
 	fout.write(compactedText.data(), sizeof(char)* vetsize);
 
 	cout << "\n\nArquivo compactado. Saida: " << nomeArquivo << "\n\n";
 
-	delete[] header;
-	DeleteTree(raiz);
+	delete[] no;
+	DeleteArvore(raiz);
 
-	for (auto it : Dictionary)
+	for (auto it : Dicionario)
 		delete it;
 
 	for (int i = 0; i < alphabetSize; i++)
-		delete totalHeader[i];
+		delete totalDeNos[i];
 
 	fout.close();
 	system("pause");
 }
 
 
-void Huffman::DecodeFile()
+void Huffman::Decodificador()
 {
 	cout << "Lista de arquivos a serem Decodificados\n";
 	system("dir /b *.huf"); //Lista os arquivos a serem codificados
@@ -192,8 +191,8 @@ void Huffman::DecodeFile()
 	fin.read((char*)&alphabetSize, sizeof(unsigned short));
 
 	// Aloca espaço para a informação do cabeçalho
-	header = new Header[alphabetSize];
-	fin.read((char*)header, sizeof(Header)* alphabetSize);
+	no = new No[alphabetSize];
+	fin.read((char*)no, sizeof(No)* alphabetSize);
 
 	// Lê o número de bits armazenados no arquivo e calcula tamanho do vetor
 	nbits = 0;
@@ -208,25 +207,25 @@ void Huffman::DecodeFile()
 	// Copia a informação dos headers comuns em headers compativeis com a criação da arvore
 	for (int i = 0; i < alphabetSize; i++)
 	{
-		HeaderNo * hNo = new HeaderNo;
+		NoRaiz * hNo = new NoRaiz;
 		hNo->esq = nullptr;
 		hNo->dir = nullptr;
-		hNo->a.simbolo = header[i].simbolo;
-		hNo->a.freq = header[i].freq;
+		hNo->a.simbolo = no[i].simbolo;
+		hNo->a.freq = no[i].freq;
 
 		// Adiciona header à fila de prioridade.
-		simpleFrontier.put(hNo, header[i].freq);
+		fp.put(hNo, no[i].freq);
 	}
 
 	cout << "\n\nArquivo decodificado: \n\n";
 	char result;
 	ofstream fout;
 	fout.open(nomeArquivo);//Caso o arquivo txt exista essa abertura o sobreescreve com o texto decodificado
-	HeaderNo * raiz = CreateTree();
+	NoRaiz * raiz = CriaArvore();
 
 	for (int i = 0; i < alphabetSize; i++)
 	{
-		decodedFileLenght += header[i].freq; // Determina o tamanho descompactado do arquivo
+		TamArquivoDecodificado += no[i].freq; // Determina o tamanho descompactado do arquivo
 	}
 
 	// Descompactação iniciada
@@ -240,7 +239,7 @@ void Huffman::DecodeFile()
 			list<char> binaryChar;
 
 			// Converte um caractere em uma string contendo 0 e 1 correspondente.
-			string text = CharToBin(data[i]);
+			string text = ConversorBinario(data[i]);
 
 			for (int j = 0; j < text.length(); j++)
 			{
@@ -254,7 +253,7 @@ void Huffman::DecodeFile()
 			if (tempRaiz != nullptr)
 			{
 				// Tenta determinar qual o simbolo correspondente à informação binaria gravada.
-				result = GetSymbol(tempRaiz, &binaryChar);
+				result = GetSimbolo(tempRaiz, &binaryChar);
 
 				// Leitura bem sucedida.
 				if (result != -1)
@@ -268,7 +267,7 @@ void Huffman::DecodeFile()
 				 // tenha sido suficiente para o caractere anterior. 
 			{
 				// Tenta determinar qual o simbolo correspondente à informação binaria gravada.
-				result = GetSymbol(raiz, &binaryChar);
+				result = GetSimbolo(raiz, &binaryChar);
 
 				// Leitura bem sucedida.
 				if (result != -1)
@@ -284,7 +283,7 @@ void Huffman::DecodeFile()
 			while (!binaryChar.empty())
 			{
 				// Tenta determinar qual o simbolo correspondente à informação binaria gravada.
-				result = GetSymbol(raiz, &binaryChar);
+				result = GetSimbolo(raiz, &binaryChar);
 
 				// Leitura bem sucedida.
 				if (result != -1)
@@ -299,16 +298,16 @@ void Huffman::DecodeFile()
 	}
 	cout << "\n\nArquivo decodificado em " << nomeArquivo << " !\n";
 	fout.close();
-	delete[] header;
+	delete[] no;
 	delete[] data;
 
-	DeleteTree(raiz);
+	DeleteArvore(raiz);
 
 	cout << "\n\n";
 	system("pause");
 }
 
-string Huffman::CharToBin(unsigned char input) // Converte caractere em binario.
+string Huffman::ConversorBinario(unsigned char input) // Converte caractere em binario.
 {
 	unsigned temp = (unsigned)input;
 	string tmp = "", tm = "";
@@ -330,21 +329,21 @@ string Huffman::CharToBin(unsigned char input) // Converte caractere em binario.
 }
 
 // Retorna a informação binaria correspondente do caractere c
-string Huffman::GetCode(char c)
+string Huffman::GetPrefixo(char c)
 {
-	for (auto it = Dictionary.begin(); it != Dictionary.end(); it++)
+	for (auto it = Dicionario.begin(); it != Dicionario.end(); it++)
 	{
-		if ((*it)->symb == c)
-			return (*it)->form;
+		if ((*it)->simbolo == c)
+			return (*it)->codigo;
 	}
 	return "";
 }
 
 // Retorna simbolo correspondente à informação binaria
-char Huffman::GetSymbol(HeaderNo * pt, list<char> * path)
+char Huffman::GetSimbolo(NoRaiz * pt, list<char> * path)
 {
 	// Assegura que a leitura das informações binarias não ultrapasse para o lixo do ultimo caractere.
-	if (decodedFileLenght == 0)
+	if (TamArquivoDecodificado == 0)
 	{
 		path->clear();
 		return -1;
@@ -362,7 +361,7 @@ char Huffman::GetSymbol(HeaderNo * pt, list<char> * path)
 	// Caractere correspondente encontrado.
 	if (c != '\0')
 	{
-		decodedFileLenght--; // Um caracter foi lido.
+		TamArquivoDecodificado--; // Um caracter foi lido.
 		return c;
 	}
 
@@ -371,7 +370,7 @@ char Huffman::GetSymbol(HeaderNo * pt, list<char> * path)
 	if (!path->empty() && path->front() == '0')
 	{
 		path->pop_front();
-		c = GetSymbol(pt->esq, path);
+		c = GetSimbolo(pt->esq, path);
 	}
 
 	// Uma verificação extra (c == '\0') para caso um caractere tenha sido encontrado na chamada da esquerda.
@@ -379,7 +378,7 @@ char Huffman::GetSymbol(HeaderNo * pt, list<char> * path)
 	if (!path->empty() && path->front() == '1' && c == '\0')
 	{
 		path->pop_front();
-		c = GetSymbol(pt->dir, path);
+		c = GetSimbolo(pt->dir, path);
 	}
 
 	// Retorna caractere encontrado. Esse retorno é utilizado durante as chamadas recursivas.
@@ -388,87 +387,87 @@ char Huffman::GetSymbol(HeaderNo * pt, list<char> * path)
 
 // Gera dicionario para a codificação.
 // Utilizado navegação pos-ordem.
-void Huffman::GenerateDictionary(HeaderNo * pt, string path)
+void Huffman::CriaDicionario(NoRaiz * pt, string path)
 {
 	if (pt->esq != nullptr)
 	{
 		path.operator+=('0');
-		GenerateDictionary(pt->esq, path);
+		CriaDicionario(pt->esq, path);
 		path.pop_back();
 	}
 
 	if (pt->dir != nullptr)
 	{
 		path.operator+=('1');
-		GenerateDictionary(pt->dir, path);
+		CriaDicionario(pt->dir, path);
 		path.pop_back();
 	}
 
 	if (pt->a.simbolo != '\0')
 	{
-		Definition * def = new Definition; // Cria definição do dicionario
-		def->symb = pt->a.simbolo;
-		def->form = path;
-		Dictionary.push_back(def); // Grava informação no dicionario.
+		Chave * def = new Chave; // Cria definição do dicionario
+		def->simbolo = pt->a.simbolo;
+		def->codigo = path;
+		Dicionario.push_back(def); // Grava informação no dicionario.
 	}
 }
 
 // Cria arvore.
-HeaderNo * Huffman::CreateTree()
+NoRaiz * Huffman::CriaArvore()
 {
-	HeaderNo * n1;
-	HeaderNo * n2;
+	NoRaiz * n1;
+	NoRaiz * n2;
 
 	// Enquanto houver mais de um elemento na fila de prioridade significa que ainda existe nós para ser ligados.
-	while (simpleFrontier.elements.size() > 1)
+	while (fp.elementos.size() > 1)
 	{
-		n1 = simpleFrontier.get(); // Pega o no com menor frequencia.
-		n2 = simpleFrontier.get(); // Pega o no com menor frequencia.
+		n1 = fp.get(); // Pega o no com menor frequencia.
+		n2 = fp.get(); // Pega o no com menor frequencia.
 
-		HeaderNo * no = new HeaderNo(); // Gera novo nó
+		NoRaiz * no = new NoRaiz(); // Gera novo nó
 		no->esq = n1;
 		no->dir = n2;
 		no->a.freq = n1->a.freq + n2->a.freq;
 		no->a.simbolo = '\0';
 
-		simpleFrontier.put(no, n1->a.freq + n2->a.freq); // Adiciona nó à fila de prioridade
+		fp.put(no, n1->a.freq + n2->a.freq); // Adiciona nó à fila de prioridade
 	}
 
-	HeaderNo * raiz = simpleFrontier.get();
+	NoRaiz * raiz = fp.get();
 	return raiz;
 }
 
 
-void Huffman::DeleteTree(HeaderNo * pt)  // Deleta arvore.
+void Huffman::DeleteArvore(NoRaiz * pt)  // Deleta arvore.
 {
 	if (pt->esq != nullptr)
-		DeleteTree(pt->esq);
+		DeleteArvore(pt->esq);
 
 	if (pt->dir != nullptr)
-		DeleteTree(pt->dir);
+		DeleteArvore(pt->dir);
 
 	delete pt;
 }
 
 
-int Huffman::CreateAlphabet(char simbolo)  // frequencias de cada símbolo no texto
+int Huffman::Alfabeto(char simbolo)  // frequencias de cada símbolo no texto
 {
 	if (simbolo == '\0' || simbolo < 0)
 		return -2;
 
 	for (int i = 0; i < alphabetSize; i++)
 	{
-		if (totalHeader[i]->simbolo == simbolo)
+		if (totalDeNos[i]->simbolo == simbolo)
 		{
-			totalHeader[i]->freq++;
+			totalDeNos[i]->freq++;
 			return -1;
 		}
 	}
 
 	// Adiciona caractere c como novo simbolo.
-	totalHeader[alphabetSize] = new Header();
-	totalHeader[alphabetSize]->simbolo = simbolo;
-	totalHeader[alphabetSize]->freq++;
+	totalDeNos[alphabetSize] = new No();
+	totalDeNos[alphabetSize]->simbolo = simbolo;
+	totalDeNos[alphabetSize]->freq++;
 	alphabetSize++;
 	return 0;
 }

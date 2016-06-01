@@ -6,48 +6,54 @@
 #include <fstream>
 using namespace std;
 
-struct Header
+struct No
 {
 	char simbolo;
 	unsigned short freq;
 };
 
-struct HeaderNo //Nó Raiz
+struct NoRaiz 
 {
-	HeaderNo * esq;
-	HeaderNo * dir;
-	Header a;
+	NoRaiz * esq;
+	NoRaiz * dir;
+	No a;
 };
 
-struct Definition //chave do dicionario
+//codigo prefixo
+struct Chave 
 {
-	char symb;
-	string form;
+	char simbolo;
+	string codigo;
 };
 
-typedef pair<int, HeaderNo *> PQElement; // Par de valores para a manipulação da fila de prioridade
+// Par de valores para a manipulação da fila de prioridade
+typedef pair<int, NoRaiz *> ElementoDaFila; 
 
-struct HeaderCompare // (Binary predicate) para a escolha do simbolo com menor frequencia
+// Compara o no escolhendo o simbolo com menor frequencia
+struct Comparador 
 {
-	bool operator()(const PQElement& lhs, const PQElement& rhs) const
+	bool operator()(const ElementoDaFila& e1, const ElementoDaFila& e2) const
 	{
-		return lhs.first > rhs.first;
+		return (e1.first > e2.first ? true : false);
 	}
 };
 
-struct PriorityQueue // Fila de prioridade
+// Cria a fila de prioridade
+struct FilaPrioridade 
 {
-	priority_queue<PQElement, vector<PQElement>,
-		HeaderCompare> elements;
+	priority_queue<ElementoDaFila, vector<ElementoDaFila>,
+		Comparador> elementos;
 
-	inline void put(HeaderNo * item, int priority) { // Adiciona um HeaderNo à fila de prioridade
-		elements.emplace(priority, item);
+	// Adiciona um NoRaiz à fila de prioridade
+	inline void put(NoRaiz * item, int prioridade) { 
+		elementos.emplace(prioridade, item);
 	}
 
-	inline HeaderNo * get() { // Retorna o HeaderNo com maior prioridade (de acordo com o Binary predicate) e remove o elemento da fila.
-		HeaderNo * best_item = elements.top().second;
-		elements.pop();
-		return best_item;
+	// Retorna o No com maior prioridade removendo o elemento da fila.
+	inline NoRaiz * get() { 
+		NoRaiz * item = elementos.top().second;
+		elementos.pop();
+		return item;
 	}
 };
 
@@ -56,30 +62,30 @@ class Huffman
 public:
 	Huffman();
 	~Huffman();
-	void EncodeFile();
-	void DecodeFile();
+	void Codificador();
+	void Decodificador();
 	
 private:
 
-	int decodedFileLenght;
+	int TamArquivoDecodificado;
 	unsigned short alphabetSize;
 	unsigned short nbits;
-	string text;
+	string texto;
 
-	HeaderNo * tempRaiz;
-	Header * totalHeader[256];
-	Header * header;
-	PriorityQueue simpleFrontier;
-	list<Definition *> Dictionary;
+	NoRaiz * tempRaiz;
+	No * totalDeNos[256];
+	No * no;
+	FilaPrioridade fp;
+	list<Chave *> Dicionario;
 
-	int CreateAlphabet(char simbolo);
-	char GetSymbol(HeaderNo * pt, list<char> * path);
-	void GenerateDictionary(HeaderNo * pt, string path);
+	int Alfabeto(char simbolo);
+	char GetSimbolo(NoRaiz * pt, list<char> * caminho);
+	void CriaDicionario(NoRaiz * pt, string caminho);
 
-	string GetCode(char c);
-	string CharToBin(unsigned char input);
-	HeaderNo * CreateTree();
-	void DeleteTree(HeaderNo * pt);
+	string GetPrefixo(char c);
+	string ConversorBinario(unsigned char entrada);
+	NoRaiz * CriaArvore();
+	void DeleteArvore(NoRaiz * pt);
 
 	
 };

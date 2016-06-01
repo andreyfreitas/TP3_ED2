@@ -24,10 +24,10 @@ int main()
 			switch (x)
 			{
 			case '1':
-				huf.EncodeFile();
+				huf.Codificador();
 				break;
 			case '2':
-				huf.DecodeFile();
+				huf.Decodificador();
 				break;
 			}
 		}
