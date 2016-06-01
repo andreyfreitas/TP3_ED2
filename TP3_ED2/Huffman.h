@@ -64,6 +64,8 @@ public:
 	~Huffman();
 	void Codificador();
 	void Decodificador();
+	void Wait(int waitTime);
+	void wait();
 	
 private:
 
@@ -86,7 +88,7 @@ private:
 	string ConversorBinario(unsigned char entrada);
 	NoRaiz * CriaArvore();
 	void DeleteArvore(NoRaiz * pt);
-
+	
 	
 };
 

@@ -17,21 +17,24 @@ int main()
 		cin >> x;
 		system("cls");
 
-		Huffman huf;
+		
 
-		if (x == '1' || x == '2' || x == '3')
+		if (x == '1' || x == '2')
 		{
+			Huffman huf;
 			switch (x)
 			{
 			case '1':
 				huf.Codificador();
+				
 				break;
 			case '2':
 				huf.Decodificador();
+				
 				break;
 			}
 		}
-		else
+		else if (x != '3')
 		{
 			cout << "Por favor digite um valor da lista abaixo. " << endl;
 		}

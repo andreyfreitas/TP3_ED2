@@ -15,13 +15,12 @@ Huffman::~Huffman()
 
 void Huffman::Codificador()
 {
-	cout << "Lista de arquivos a serem Codificados\n";
 	//Lista os arquivos a serem codificados
+	cout << "Lista de arquivos a serem Codificados\n";
 	system("dir /b *.txt"); 
 	cout << "\n";
-	// Nome do arquivo limitado a 60 caracteres
 	char nomeArquivo[60] = { '\0' }; 
-	cout << "Nome do arquivo que deseja codificar: ";
+	cout << "Nome do arquivo a codificar: ";
 	cin >> nomeArquivo;
 
 	ifstream fin;
@@ -51,98 +50,82 @@ void Huffman::Codificador()
 	}
 	fin.close();
 	
-	// Determina frequencias de cada caractere do texto
+	
 	for (int i = 0; i < texto.length(); i++)
 		Alfabeto(texto[i]); 
 
 	no = new No[alphabetSize];
 
-	// Ordena headers de acordo com o simbolo
-	list<No> lHeader;
+	// Ordena nos de acordo com o simbolo
+	list<No> listaDeNos;
 	for (int i = 0; i < alphabetSize; i++)
 	{
-		lHeader.push_back(*totalDeNos[i]);
+		listaDeNos.push_back(*totalDeNos[i]);
 	}
-	lHeader.sort([](const No& first, const No& second) { return first.simbolo < second.simbolo; });
+	listaDeNos.sort([](const No& first, const No& second) { return first.simbolo < second.simbolo; });
+	
+	auto it = listaDeNos.begin();
 
-	// Primeiro header da lista ordenada
-	auto it = lHeader.begin();
-
-	// Inicializa o vetor de headers e também instancia copias compativeis com a criação da arvore.
 	for (int i = 0; i < alphabetSize; i++)
 	{
-		// Copia header da lista ordenada para vetor
 		no[i] = *it;
-
-		// Iteração da lista ordenada de headers.
 		it++;
-
-		// No compativel com criação da arvore.
 		NoRaiz * no = new NoRaiz();
 		no->a.simbolo = no[i].a.simbolo;
 		no->a.freq = no[i].a.freq;
 		no->dir = nullptr;
 		no->esq = nullptr;
-
-		// Adiciona No à fila de prioridade.
 		fp.put(no, no[i].a.freq);
 	}
 
-	// Gera arvore a partir da fila de prioridade.
+	// Cria arvore 
 	NoRaiz * raiz = CriaArvore();
 
-	// Gera dicionario a partir da raiz da arvore.
+	// Cria dicionario 
 	Dicionario.clear();
 	CriaDicionario(raiz, "");
-
 	int contador = 0;
-	char binaryChar = 0;
-	string compactedText;
-
-	// Cria arquivo que contem a informação compactada.
+	char valorBinairo = 0;
+	string textoCompactado;
+	wait();
+	
+	// Cria arquivo .huf
 	ofstream fout;
 	fout.open(nomeArquivo, ios_base::out | ios_base::binary);
 
 
-	// Leitura de todos os caracteres da string.
+
 	for (int i = 0; i < texto.length(); i++)
 	{
-		// Pega o codigo correspondente da letra.
-		string code = GetPrefixo(texto[i]);
+	
+		string codigoPrefixo = GetPrefixo(texto[i]);
 
-		// Le todos os caracteres (numeros) do codigo da letra.
-		for (int j = 0; j < code.length(); j++)
+		
+		for (int j = 0; j < codigoPrefixo.length(); j++)
 		{
-			// Converte o numero (0 e 1) de sua representação na tabela ascii para inteiro.
-			int result = (code[j] - 48);
-
-			binaryChar = binaryChar << 1;		// Shift para esquerda
-			binaryChar = binaryChar | result; // Situações: binaryChar | 1 , binaryChar | 0
-
+			int valorASCII = (codigoPrefixo[j] - 48);
+			valorBinairo = valorBinairo << 1;			//Shift
+			valorBinairo = valorBinairo | valorASCII;	//Ou bit a bit
 			contador++;
 
-			if (contador == 8) // Limite binario do tipo char
+			if (contador == 8) 
 			{
-				// Adiciona caractere gerado e reseta variaveis auxiliares.
-				compactedText.operator+=(binaryChar);
-				binaryChar = 0;
+				textoCompactado.operator+=(valorBinairo);
+				valorBinairo = 0;
 				contador = 0;
 			}
 		}
 	}
 
-	// Caso o ultimo caractere não tenha sido totalmente preenchido
+	//Complementação do ultimo caracter se necessario
 	if (contador < 8)
 	{
-		// Move a informação binaria adicionada para o inicio do char
+		
 		for (int i = contador; i < 8; i++)
-			binaryChar = binaryChar << 1;
+			valorBinairo = valorBinairo << 1;
 
-		// Numero de bits do texto compactado.
-		nbits = compactedText.length() * 8 + contador;
-
-		//Adiciona ultimo caractere à string.
-		compactedText.operator+=(binaryChar);
+		nbits = textoCompactado.length() * 8 + contador;
+		textoCompactado.operator+=(valorBinairo);
 	}
 
 	int vetsize = ((nbits % 8) == 0) ? (nbits / 8) : ((nbits / 8) + 1);
@@ -150,7 +133,7 @@ void Huffman::Codificador()
 	fout.write((char*)&alphabetSize, sizeof(unsigned short));
 	fout.write((char*)no, sizeof(No) * alphabetSize);
 	fout.write((char*)&nbits, sizeof(unsigned short));
-	fout.write(compactedText.data(), sizeof(char)* vetsize);
+	fout.write(textoCompactado.data(), sizeof(char)* vetsize);
 
 	cout << "\n\nArquivo compactado. Saida: " << nomeArquivo << "\n\n";
 
@@ -164,19 +147,21 @@ void Huffman::Codificador()
 		delete totalDeNos[i];
 
 	fout.close();
-	system("pause");
+	system("echo Pressione qualquer tecla para retornar ao menu");
+	system("pause>null");
+	system("cls");
 }
 
 
 void Huffman::Decodificador()
 {
+	
+	//Lista os arquivos a serem codificados
 	cout << "Lista de arquivos a serem Decodificados\n";
-	system("dir /b *.huf"); //Lista os arquivos a serem codificados
+	system("dir /b *.huf"); 
 	cout << "\n";
-
-	char nomeArquivo[60] = { '\0' }; // Nome do arquivo limitado a 60 caracteres no máximo.
-
-	cout << "Nome do arquivo que deseja decodificar: ";
+	char nomeArquivo[60] = { '\0' }; 
+	cout << "Nome do arquivo a decodificar: ";
 	cin >> nomeArquivo;
 
 	ifstream fin;
@@ -216,7 +201,7 @@ void Huffman::Decodificador()
 		// Adiciona header à fila de prioridade.
 		fp.put(hNo, no[i].freq);
 	}
-
+	wait();
 	cout << "\n\nArquivo decodificado: \n\n";
 	char result;
 	ofstream fout;
@@ -227,9 +212,10 @@ void Huffman::Decodificador()
 	{
 		TamArquivoDecodificado += no[i].freq; // Determina o tamanho descompactado do arquivo
 	}
-
+	
 	// Descompactação iniciada
 	int i = 0;
+	
 	while (i < vetsize) // Iteração no vetor de caracteres (data)
 	{
 		for (int k = 0; // O k representa o bit lido no caractere.
@@ -304,7 +290,9 @@ void Huffman::Decodificador()
 	DeleteArvore(raiz);
 
 	cout << "\n\n";
-	system("pause");
+	system("echo Pressione qualquer tecla para retornar ao menu");
+	system("pause>null");
+	system("cls");
 }
 
 string Huffman::ConversorBinario(unsigned char input) // Converte caractere em binario.
@@ -412,25 +400,28 @@ void Huffman::CriaDicionario(NoRaiz * pt, string path)
 	}
 }
 
-// Cria arvore.
+// Cria arvore de Huffman.
 NoRaiz * Huffman::CriaArvore()
 {
 	NoRaiz * n1;
 	NoRaiz * n2;
 
-	// Enquanto houver mais de um elemento na fila de prioridade significa que ainda existe nós para ser ligados.
+	
 	while (fp.elementos.size() > 1)
 	{
-		n1 = fp.get(); // Pega o no com menor frequencia.
-		n2 = fp.get(); // Pega o no com menor frequencia.
+		// Pega dois nos com menor frequencia para ligar.
+		n1 = fp.get(); 
+		n2 = fp.get(); 
 
-		NoRaiz * no = new NoRaiz(); // Gera novo nó
+		// Cria novo nó
+		NoRaiz * no = new NoRaiz(); 
 		no->esq = n1;
 		no->dir = n2;
 		no->a.freq = n1->a.freq + n2->a.freq;
 		no->a.simbolo = '\0';
 
-		fp.put(no, n1->a.freq + n2->a.freq); // Adiciona nó à fila de prioridade
+		// Adiciona nó à fila de prioridade
+		fp.put(no, n1->a.freq + n2->a.freq); 
 	}
 
 	NoRaiz * raiz = fp.get();
@@ -438,7 +429,7 @@ NoRaiz * Huffman::CriaArvore()
 }
 
 
-void Huffman::DeleteArvore(NoRaiz * pt)  // Deleta arvore.
+void Huffman::DeleteArvore(NoRaiz * pt)  
 {
 	if (pt->esq != nullptr)
 		DeleteArvore(pt->esq);
@@ -449,8 +440,8 @@ void Huffman::DeleteArvore(NoRaiz * pt)  // Deleta arvore.
 	delete pt;
 }
 
-
-int Huffman::Alfabeto(char simbolo)  // frequencias de cada símbolo no texto
+// Determina frequencias de cada caractere do texto
+int Huffman::Alfabeto(char simbolo)  
 {
 	if (simbolo == '\0' || simbolo < 0)
 		return -2;
@@ -471,5 +462,24 @@ int Huffman::Alfabeto(char simbolo)  // frequencias de cada símbolo no texto
 	alphabetSize++;
 	return 0;
 }
+
+void Huffman::Wait(int waitTime)
+{
+	for (int i = 0; i < waitTime; i++)
+	{
+		continue;
+	}
+}
+
+void Huffman::wait() {
+	cout << "Convertendo";
+	for (size_t i = 0; i < 10; i++)
+	{
+		Wait(100000000);
+		cout << ".";
+	}
+	cout << endl;
+}
+
 
 
